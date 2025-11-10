@@ -1,6 +1,7 @@
 #include "board.h"
 #include "move.h"
 #include <stdbool.h>
+#include"interface.h"
 
 // Helper: find the square index of the king for a color
 int find_king(Board *board, int color) {

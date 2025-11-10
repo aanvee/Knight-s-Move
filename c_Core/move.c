@@ -1,8 +1,14 @@
 #include "move.h"
+#include"interface.h"
 #include "status.h"
 #include <stdlib.h>
 #include <stdio.h>
 
+/*#ifdef _WIN32
+    #define EXPORT __declspec(dllexport)
+#else
+    #define EXPORT __attribute__((visibility("default")))
+#endif*/
 // --- Helpers ---
 static bool is_clear_path(Board *board, int from, int to, int step) {
     int sq = from + step;
@@ -26,7 +32,7 @@ static bool basic_move_ok(Board *board, int from, int to) {
     if (target.color == piece.color)
         return false;
 
-    int diff = to - from;
+   // int diff = to - from;
     int rank_from = from >> 4, rank_to = to >> 4;
     int file_from = from & 7, file_to = to & 7;
     int rank_diff = rank_to - rank_from;
@@ -36,7 +42,7 @@ static bool basic_move_ok(Board *board, int from, int to) {
         case PAWN: {
             int forward = (piece.color == WHITE) ? 1 : -1;
             int start_rank = (piece.color == WHITE) ? 1 : 6;
-            int promotion_rank = (piece.color == WHITE) ? 7 : 0;
+           // int promotion_rank = (piece.color == WHITE) ? 7 : 0;
 
             // Move forward
             if (file_diff == 0) {
@@ -112,7 +118,7 @@ bool is_valid_move(Board *board, int from, int to) {
         int rank = from >> 4;
         int king_side = (to & 7) > (from & 7);
         int rook_from = rank * 16 + (king_side ? 7 : 0);
-        int rook_to = rank * 16 + (king_side ? 5 : 3);
+      //  int rook_to = rank * 16 + (king_side ? 5 : 3);
         Piece rook = board->squares[rook_from];
 
         if (rook.type != ROOK || rook.color != moving.color)
