@@ -11,8 +11,26 @@ if not os.path.exists(dll_path):
     raise FileNotFoundError(f"chess.dll not found: {dll_path}")
 
 chess_lib = CDLL(dll_path)
-
 BoardPtr = c_void_p
+
+def is_enemy_piece(selected_piece, target_piece):
+    """Return True if selected_piece and target_piece exist and are opposite colors."""
+    if not selected_piece or not target_piece:
+        return False
+    # piece strings are like 'wP' or 'bK'
+    try:
+        return (selected_piece[0] == 'w' and target_piece[0] == 'b') or \
+               (selected_piece[0] == 'b' and target_piece[0] == 'w')
+    except Exception:
+        return False
+
+def draw_red_highlight(row, col):
+    """Draw a red border around the given board cell (uses global SCREEN and SQUARE)."""
+    # Use the existing global names used elsewhere in your code
+    rect = pygame.Rect(col * SQUARE, row * SQUARE, SQUARE, SQUARE)
+    pygame.draw.rect(SCREEN, (255, 0, 0), rect, 4)
+
+
 
 # Define function signatures (NOTE: make_move takes two ints (0x88 indices))
 chess_lib.create_board.restype = BoardPtr
@@ -89,26 +107,43 @@ def get_legal_moves(board_ptr, from_sq):
 # --------------------------------------------------------------
 # 6. Drawing
 # --------------------------------------------------------------
-def draw_board(selected=None, legal=None):
+def draw_board(selected=None, legal=None, board=None):
+    # --- draw background board ---
     for r in range(8):
         for f in range(8):
             color = LIGHT if (r + f) % 2 == 0 else DARK
             if selected == (r, f):
                 color = (255, 255, 100)
-            pygame.draw.rect(SCREEN, color, (f*SQUARE, r*SQUARE, SQUARE, SQUARE))
-    if legal:
-        for to_sq in legal:
-            tr, tf = to_sq >> 4, to_sq & 7
-            cx = tf * SQUARE + SQUARE // 2
-            cy = tr * SQUARE + SQUARE // 2
-            pygame.draw.circle(SCREEN, (0, 200, 0, 180), (cx, cy), SQUARE // 6)
+            pygame.draw.rect(SCREEN, color, (f * SQUARE, r * SQUARE, SQUARE, SQUARE))
+
+def draw_highlights(selected, legal, board):
+    """Draw move highlights (green dots / red capture squares)."""
+    if not selected or not legal or not board:
+        return
+
+    selected_piece = board[selected[0]][selected[1]]
+    for to_sq in legal:
+        tr, tf = to_sq >> 4, to_sq & 7
+        target_piece = board[tr][tf]
+        cx = tf * SQUARE + SQUARE // 2
+        cy = tr * SQUARE + SQUARE // 2
+
+        if target_piece and is_enemy_piece(selected_piece, target_piece):
+            # Enemy → red border
+            rect = pygame.Rect(tf * SQUARE, tr * SQUARE, SQUARE, SQUARE)
+            pygame.draw.rect(SCREEN, (255, 0, 0), rect, 4)
+        else:
+            # Empty → green dot
+            pygame.draw.circle(SCREEN, (0, 200, 0), (cx, cy), SQUARE // 6)
+
 
 def draw_pieces(board):
+    """Draw all chess pieces on the board."""
     for r in range(8):
         for f in range(8):
-            p = board[r][f]
-            if p:
-                SCREEN.blit(PIECES[p], (f*SQUARE, r*SQUARE))
+            piece = board[r][f]
+            if piece:
+                SCREEN.blit(PIECES[piece], (f * SQUARE, r * SQUARE))
 
 # --------------------------------------------------------------
 # 7. Main loop
@@ -135,8 +170,10 @@ def main():
         if chess_lib.is_stalemate(board_ptr, turn):
             txt = "STALEMATE!"
 
-        draw_board(selected, legal_moves if selected else None)
+        draw_board(selected, legal_moves if selected else None, py_board)
+
         draw_pieces(py_board)
+        draw_highlights(selected, legal_moves if selected else None, py_board) 
         font = pygame.font.SysFont('Arial', 24)
         SCREEN.blit(font.render(txt, True, (200, 0, 0)), (10, 10))
 
