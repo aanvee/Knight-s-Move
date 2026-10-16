@@ -4,12 +4,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-/*#ifdef _WIN32
-    #define EXPORT __declspec(dllexport)
-#else
-    #define EXPORT __attribute__((visibility("default")))
-#endif*/
-// --- Helpers ---
 static bool is_clear_path(Board *board, int from, int to, int step) {
     int sq = from + step;
     while (sq != to) {
